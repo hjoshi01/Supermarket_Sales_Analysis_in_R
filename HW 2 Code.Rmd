@@ -1,0 +1,209 @@
+---
+title: "Harshit HW2 IST 707"
+author: "HW 2"
+date: "2023-02-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+Harshit Joshi : HW 2
+
+```{r}
+supermarket_sales = read.csv('C:/Users/harsh/OneDrive/Documents/IST 707  AML/Lecture 2/supermarket_sales(1) (1).csv')
+```
+```{r}
+nrow(supermarket_sales)
+#View(supermarket_sales)
+```
+```{r}
+summary(supermarket_sales)
+```
+```{r}
+#converting to factors for variables that are necessary
+supermarket_sales$Branch <- factor(supermarket_sales$Branch)
+
+supermarket_sales$City <- factor(supermarket_sales$City)
+
+#since I am company's data scientist, our member can be ranked above normal customers, so I converted to ordered factor
+supermarket_sales$Customer.type <- ordered(supermarket_sales$Customer.type)
+
+supermarket_sales$Gender <- factor(supermarket_sales$Gender)
+
+supermarket_sales$Payment <- factor(supermarket_sales$Payment)
+
+supermarket_sales$Product.line <- factor(supermarket_sales$Product.line)
+```
+```{r}
+
+str(supermarket_sales$Customer.type)
+```
+```{r}
+# supermarket_sales.complete <- supermarket_sales[complete.cases(supermarket_sales),]
+# nrow(supermarket_sales.complete)
+# #looks like every value is filled and not null
+```
+```{r}
+nrow(supermarket_sales[duplicated(supermarket_sales),])
+#no duplicate rows
+```
+```{r}
+summary(supermarket_sales$Branch)
+pie(summary(supermarket_sales$Branch),main = "Store wise distribution")
+#out of all the sales of super market at 3 locations ABC, number of invoices is similar in all three with A having highest number of transactions at 340.
+
+```
+```{r}
+
+#Which Store has highest Gross Income:
+market_sales <- data.frame(supermarket_sales)
+library(tidyverse)
+
+#grouping by branches
+market_sales %>%
+ group_by(market_sales$Branch)
+
+#storing gross branch income in a df
+
+gross_income_calculation <- market_sales %>%
+ group_by(Branch) %>%
+  summarise(Gross_Income = sum(gross.income))
+
+#this is a df containing gross income distribution of each branch in our dataset
+gross_income_calculation
+
+#visualizing to finding anomaly in gross_income_calculation
+library(ggplot2)
+ggplot(gross_income_calculation, aes(x=Branch,y=Gross_Income)) + geom_bar(stat = 'identity')
+
+#it turns out that Branch C has highest gross income of about 5265.176
+#other 2 branches have same similar gross income.
+```
+
+
+```{r}
+
+summary(supermarket_sales$Gender)
+#both gender are equally frequent
+
+summary(supermarket_sales$Customer.type)
+#both customer types are are equally frequent
+
+
+```
+```{r}
+#I want to explore the prices of invoices. what is the average amount spent per customer?
+#what is the highest amount spent and on what?
+summary(supermarket_sales$Unit.price)
+#Average money spent per customer is $55.67
+#minimum spent: $10.08, 
+#maximum spent is $99.96
+
+#I want to find average money spent accross each store in 3 cities:
+
+prices_Yangon <- supermarket_sales$Unit.price[which(supermarket_sales$City == "Yangon")]
+summary(prices_Yangon)
+
+
+prices_Naypyitaw <- supermarket_sales$Unit.price[which(supermarket_sales$City == "Naypyitaw")]
+summary(prices_Naypyitaw)
+
+prices_Mandalay <- supermarket_sales$Unit.price[which(supermarket_sales$City == "Mandalay")]
+summary(prices_Mandalay)
+
+#Price trend are very similar accross all stores:
+```
+
+
+
+
+```{r}
+# I want to calculate the peak hours in stores during a day,so supervisors can have better idea of when to have extra employees in stores.
+
+#for this Ill make use of Time Variable that suggest at what time have our customers bought items. As this variable is in character type, I ll convert this to Hourly format:
+
+#hist(supermarket_sales$Time)
+library(ggplot2)
+
+supermarket_sales$timestamp <- strptime(supermarket_sales$Time, format="%H:%S")
+
+#then I'll take hours only from the timestamp:
+
+supermarket_sales$hoursonly <- as.numeric(format(supermarket_sales$timestamp,format = "%H"))
+
+#Visualizing it:
+hist(supermarket_sales$hoursonly, breaks=10)
+
+#the following histogram shows number of hours (xaxis) wiht their level
+#of frequency based on transaction time. the hours of 10-11AM are popular among customers to visit the stores in a day. So managers must make sure that there is no employee shortage during these hours.
+```
+```{r}
+#Which is the most profitable product line:
+#for this we need to group by product line and calculate sum of gross income column of each product line
+profitable_product <- data.frame(supermarket_sales)
+nrow(profitable_product)
+
+profitable_product %>%
+  group_by(Product.line) %>%
+    summarise(gross_product_income = sum(gross.income))
+
+#from the below table it is evident that Food and beverages is most profitable product line of all with gross product income of $2673.564
+```
+```{r}
+#calculating highest rated product line of all:
+#I will group by product line and calculate the average mean for each product:
+ratings_product <- data.frame(supermarket_sales)
+#nrow(ratings_product)
+
+#summary(ratings_product)
+ratings_product$Rating <- as.numeric(ratings_product$Rating)
+
+ratings <- ratings_product %>% group_by(Product.line) %>% summarise(ratings_of_product_lines = mean(Rating))
+
+
+ratings
+
+#visualizing 
+library(ggplot2)
+#ggplot(ratings, aes(x=Product.line,y=ratings_of_product_lines)) + geom_bar(alpha = 0.8, stat = 'identity')
+
+#Food and beverages have highest ratings of 7.11, One can infer that investing more on this line of product can be beneficial for our company.
+```
+```{r}
+#mean(supermarket_sales$Rating)
+#view(supermarket_sales)
+```
+```{r}
+#Now I want to find if there is relation between gender of our customers and their membership status: normal or Member
+
+customer_info <- data.frame(supermarket_sales)
+#nrow(customer_info)
+
+#summary(customer_info)
+
+table(customer_info$Customer.type,customer_info$Gender )
+
+#it looks like there are more female members(261  ) than there are female normal customers(240  )
+#But there are more Male normal Customers (259) than there are male members (240)
+```
+```{r}
+#Suppose we wanted to check most popular form of payment at each branch. We can do this with ggplot library by passing out data, x, y axis and fill to fill our bars in graph:
+
+ggplot(data=supermarket_sales, aes(x=supermarket_sales$Branch, y=supermarket_sales$gross.income, fill=supermarket_sales$Payment)) +
+geom_bar(stat="identity")
+
+#This graph can be used to infer that: Cash is most popular method of payment among C Branch shoppers(Pink color)
+#Credit card is more popular form of payment in B branch (Green color)
+#E-Wallet is most widely used in A branch (Blue color)
+```
+```{r}
+
+#I want to compare number of items bought accross all 3 branches: A B and C. I also want to look for ratio of male and female customers responsible for those items bought:
+ggplot(data=supermarket_sales, aes(x=Branch, y=Quantity, fill = Gender)) + geom_bar(stat="identity")
+
+#We can see that A has more quantity as compared to B and C.But in C, female buy more in bulk as compared to female's of other branches. So we can focus on introducing more supply of feminine product, or We can learn from branch C about what are they doing to attract more female customers.
+```
+
